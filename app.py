@@ -1,4 +1,6 @@
 import streamlit as st
+import zipfile
+import os
 import nltk
 from transformers import pipeline
 from sumy.parsers.plaintext import PlaintextParser
@@ -6,9 +8,14 @@ from sumy.nlp.tokenizers import Tokenizer
 from sumy.summarizers.lex_rank import LexRankSummarizer
 
 # -----------------------------
-# Download NLTK data
+# Unzip punkt.zip for NLTK
 # -----------------------------
-nltk.download('punkt')
+if not os.path.exists("punkt"):
+    with zipfile.ZipFile("punkt.zip", "r") as zip_ref:
+        zip_ref.extractall("punkt")
+
+# Add to NLTK data path
+nltk.data.path.append('./punkt')
 
 # -----------------------------
 # Load Models
@@ -64,23 +71,25 @@ if st.button("Generate Summary"):
             article_text, max_length=150, min_length=50, do_sample=False
         )[0]['summary_text']
 
-        # Display results
-        st.subheader("📝 Extractive Summary (Key Sentences)")
-        st.write(extractive_summary)
+        # Display results in columns for clarity
+        col1, col2 = st.columns(2)
 
-        st.subheader("✍️ Abstractive Summary (Paragraph in New Words)")
-        st.write(abstractive_summary)
+        with col1:
+            st.subheader("📝 Extractive Summary")
+            st.write(extractive_summary)
+            st.download_button(
+                label="Download Extractive Summary",
+                data=extractive_summary,
+                file_name="extractive_summary.txt",
+                mime="text/plain"
+            )
 
-        # Download buttons
-        st.download_button(
-            label="Download Extractive Summary",
-            data=extractive_summary,
-            file_name="extractive_summary.txt",
-            mime="text/plain"
-        )
-        st.download_button(
-            label="Download Abstractive Summary",
-            data=abstractive_summary,
-            file_name="abstractive_summary.txt",
-            mime="text/plain"
-        )
+        with col2:
+            st.subheader("✍️ Abstractive Summary")
+            st.write(abstractive_summary)
+            st.download_button(
+                label="Download Abstractive Summary",
+                data=abstractive_summary,
+                file_name="abstractive_summary.txt",
+                mime="text/plain"
+            )
