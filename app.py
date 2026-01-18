@@ -1,21 +1,20 @@
 import streamlit as st
-import zipfile
-import os
 import nltk
+import os
 from transformers import pipeline
 from sumy.parsers.plaintext import PlaintextParser
 from sumy.nlp.tokenizers import Tokenizer
 from sumy.summarizers.lex_rank import LexRankSummarizer
 
 # -----------------------------
-# Unzip punkt.zip for NLTK
+# Download punkt tokenizer at runtime
 # -----------------------------
-if not os.path.exists("punkt"):
-    with zipfile.ZipFile("punkt.zip", "r") as zip_ref:
-        zip_ref.extractall("punkt")
+nltk_data_dir = "/tmp/nltk_data"  # temporary folder allowed on Streamlit Cloud
+if not os.path.exists(nltk_data_dir):
+    os.makedirs(nltk_data_dir)
 
-# Add to NLTK data path
-nltk.data.path.append('./punkt')
+nltk.download('punkt', download_dir=nltk_data_dir)
+nltk.data.path.append(nltk_data_dir)  # tell NLTK to use this folder
 
 # -----------------------------
 # Load Models
@@ -62,7 +61,7 @@ if st.button("Generate Summary"):
     if article_text.strip() == "":
         st.warning("Please provide an article by pasting text or uploading a file!")
     else:
-        # Extractive summary
+        # Extractive summary (3 key sentences)
         parser = PlaintextParser.from_string(article_text, Tokenizer("english"))
         extractive_summary = " ".join([str(s) for s in extractive_summarizer(parser.document, 3)])
 
@@ -71,7 +70,7 @@ if st.button("Generate Summary"):
             article_text, max_length=150, min_length=50, do_sample=False
         )[0]['summary_text']
 
-        # Display results in columns for clarity
+        # Display results in columns
         col1, col2 = st.columns(2)
 
         with col1:
